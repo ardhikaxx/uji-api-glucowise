@@ -59,6 +59,26 @@ class AuthController extends Controller
         ]);
     }
 
+    public function getProfile(Request $request)
+    {
+        $request->validate([
+            'nik' => 'required|numeric',
+        ]);
+
+        $nik = $request->input('nik');
+
+        $pengguna = Pengguna::where('nik', $nik)->first();
+
+        if (!$pengguna) {
+            return response()->json(['message' => 'Pengguna tidak ditemukan'], 404);
+        }
+
+        return response()->json([
+            'message' => 'Data profil ditemukan',
+            'data' => $pengguna
+        ], 200);
+    }
+
     public function editProfile(Request $request)
     {
         $nik = $request->header('Nik') ?? $request->input('nik');
@@ -99,7 +119,7 @@ class AuthController extends Controller
         ]);
     }
 
-    public function forgotPassword(Request $request)
+    public function checkEmail(Request $request)
     {
         $request->validate([
             'email' => 'required|string|email'
@@ -130,10 +150,15 @@ class AuthController extends Controller
             return response()->json(['message' => 'Pengguna tidak ditemukan'], 404);
         }
 
+        // Cek apakah password baru sama dengan password lama
+        if (Hash::check($request->password, $pengguna->password)) {
+            return response()->json(['message' => 'Gunakan password yang berbeda dari sebelumnya'], 400);
+        }
+
         $pengguna->update([
             'password' => Hash::make($request->password)
         ]);
 
-        return response()->json(['message' => 'Password berhasil diperbarui']);
+        return response()->json(['message' => 'Password berhasil diperbarui'], 200);
     }
 }
